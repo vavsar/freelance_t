@@ -10,7 +10,7 @@ class UserRole(models.TextChoices):
     EXECUTOR = 'executor'
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser):
     first_name = models.CharField('First name', max_length=30, blank=True)
     last_name = models.CharField('Last name', max_length=30, blank=True)
     username = models.CharField('Username', max_length=25, unique=True)
