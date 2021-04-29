@@ -18,9 +18,6 @@ class User(AbstractUser):
         choices=UserRole.choices,
         default=UserRole.EXECUTOR,
     )
-    USERNAME_FIELD = 'username'
-    EMAIL_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'email']
 
     @property
     def is_client(self):
@@ -36,4 +33,3 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        abstract = True
