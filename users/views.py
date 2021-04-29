@@ -15,11 +15,8 @@ User = get_user_model()
 
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    # filter_backends = [filters.SearchFilter]
     serializer_class = UserSerializer
-    # search_fields = ['username', ]
     lookup_field = 'username'
-    # permission_classes = (IsAdmin,)
 
 
 class EmailConfirm(viewsets.ViewSet):
