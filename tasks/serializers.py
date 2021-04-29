@@ -8,9 +8,8 @@ User = get_user_model()
 
 class TasksSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        many=True,
         slug_field='username',
-        queryset=User.objects.all()
+        read_only=True
     )
     executor = serializers.SlugRelatedField(
         default=serializers.CreateOnlyDefault(None),
