@@ -25,7 +25,7 @@ class TasksSerializer(serializers.ModelSerializer):
 class RespondsSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         default=serializers.CurrentUserDefault(),
-        slug_field='username',
+        slug_field='id',
         read_only=True
     )
     task = serializers.SlugRelatedField(

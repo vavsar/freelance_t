@@ -1,8 +1,10 @@
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
+from rest_framework.response import Response
 
-from .models import Task
+from .models import Task, Respond
 from .permissions import IsAuthor, IsExecutor
 from .serializers import TasksSerializer, RespondsSerializer
 
@@ -30,3 +32,16 @@ class RespondViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         task = get_object_or_404(Task, pk=self.kwargs.get('task_id'))
         serializer.save(author=self.request.user, task=task)
+
+    @action(detail=False,
+            methods=['patch'],
+            permission_classes=(IsAuthor,),
+            url_path=r'(?P<respond_id>\d+)/winner')
+    def winner(self, request, *args, **kwargs):
+        task = get_object_or_404(Task, pk=self.kwargs.get('task_id'))
+        respond = get_object_or_404(Respond, pk=self.kwargs.get('respond_id'))
+        task_data = TasksSerializer(task)
+        serializer = TasksSerializer(task, data=task_data.data, partial=True)
+        serializer.is_valid()
+        serializer.save(executor=respond.author)
+        return Response(serializer.data, status=status.HTTP_200_OK)
