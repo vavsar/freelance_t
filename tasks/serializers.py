@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import Task
+from .models import Task, Respond
 
 User = get_user_model()
 
@@ -19,4 +19,20 @@ class TasksSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
+        fields = '__all__'
+
+
+class RespondsSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
+        read_only=True
+    )
+    task = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='id',
+    )
+
+    class Meta:
+        model = Respond
         fields = '__all__'

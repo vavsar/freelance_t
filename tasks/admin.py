@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Task
+from .models import Task, Respond
 
 
 class TaskAdmin(admin.ModelAdmin):
@@ -13,4 +13,13 @@ class TaskAdmin(admin.ModelAdmin):
     )
 
 
+class RespondAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'author',
+        'task',
+    )
+
+
 admin.site.register(Task, TaskAdmin)
+admin.site.register(Respond, RespondAdmin)

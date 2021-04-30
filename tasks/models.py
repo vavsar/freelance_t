@@ -15,4 +15,7 @@ class Task(models.Model):
 
 
 class Respond(models.Model):
-    pass
+    author = models.ForeignKey(User, on_delete=models.CASCADE,
+                               related_name='responds')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE,
+                             related_name='responds')
