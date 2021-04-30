@@ -50,7 +50,7 @@ class User(AbstractBaseUser):
     USERNAME_FIELD = 'username'
 
     @property
-    def is_client(self):
+    def is_author(self):
         return self.role == UserRole.AUTHOR
 
     @property

@@ -10,5 +10,9 @@ class Task(models.Model):
     executor = models.ForeignKey(User, on_delete=models.CASCADE,
                                  default='', null=True,
                                  related_name='task_executor')
-    title = models.CharField(max_length=30)
-    text = models.TextField()
+    title = models.CharField('Title', max_length=30)
+    text = models.TextField('Text', default='')
+
+
+class Respond(models.Model):
+    pass
