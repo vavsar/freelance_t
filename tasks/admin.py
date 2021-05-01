@@ -10,6 +10,7 @@ class TaskAdmin(admin.ModelAdmin):
         'executor',
         'title',
         'text',
+        'status'
     )
 
 
