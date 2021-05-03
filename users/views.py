@@ -16,7 +16,7 @@ User = get_user_model()
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    lookup_field = 'username'
+    lookup_field = 'id'
 
 
 class EmailConfirm(viewsets.ViewSet):
@@ -28,7 +28,8 @@ class EmailConfirm(viewsets.ViewSet):
         serializer.is_valid(raise_exception=True)
         user, create = User.objects.get_or_create(
             username=serializer.data['username'],
-            email=serializer.data['email']
+            email=serializer.data['email'],
+            role=serializer.data['role'],
         )
         token = default_token_generator.make_token(user)
         mail_subject = 'Confirmation code'

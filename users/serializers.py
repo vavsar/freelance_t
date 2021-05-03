@@ -7,16 +7,17 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username',
-                  'email', 'phone', 'role')
+        fields = ('id', 'first_name', 'last_name', 'username',
+                  'email', 'role')
 
 
 class EmailSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=20)
     email = serializers.EmailField(required=True)
+    role = serializers.CharField(max_length=10)
 
     class Meta:
-        fields = ('username', 'email')
+        fields = ('username', 'email', 'role')
 
 
 class CodeSerializer(serializers.Serializer):

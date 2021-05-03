@@ -1,5 +1,7 @@
 from django.contrib.auth.base_user import AbstractBaseUser
-from django.contrib.auth.models import PermissionsMixin
+from django.contrib.auth.models import (PermissionsMixin, UserManager,
+                                        _user_has_module_perms, _user_has_perm)
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -34,11 +36,21 @@ class User(AbstractBaseUser):
             'Unselect this instead of deleting accounts.'
         ),
     )
+    is_superuser = models.BooleanField(
+        _('superuser status'),
+        default=False,
+        help_text=_(
+            'Designates that this user has all permissions without '
+            'explicitly assigning them.'
+        ),
+    )
+    username_validator = UnicodeUsernameValidator()
+    objects = UserManager()
     date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
     USERNAME_FIELD = 'username'
 
     @property
-    def is_client(self):
+    def is_author(self):
         return self.role == UserRole.AUTHOR
 
     @property
@@ -66,3 +78,29 @@ class User(AbstractBaseUser):
     def get_short_name(self):
         """Return the short name for the user."""
         return self.first_name
+
+    def has_perm(self, perm, obj=None):
+        """
+        Return True if the user has the specified permission. Query all
+        available auth backends, but return immediately if any backend returns
+        True. Thus, a user who has permission from a single auth backend is
+        assumed to have permission in general. If an object is provided, check
+        permissions for that object.
+        """
+        # Active superusers have all permissions.
+        if self.is_active and self.is_superuser:
+            return True
+
+        # Otherwise we need to check the backends.
+        return _user_has_perm(self, perm, obj)
+
+    def has_module_perms(self, app_label):
+        """
+        Return True if the user has any permissions in the given app label.
+        Use similar logic as has_perm(), above.
+        """
+        # Active superusers have all permissions.
+        if self.is_active and self.is_superuser:
+            return True
+
+        return _user_has_module_perms(self, app_label)
