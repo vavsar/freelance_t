@@ -13,9 +13,10 @@ class TaskStatuses(models.TextChoices):
 
 class Task(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE,
-                               related_name='task_authors')
+                               related_name='task_authors', verbose_name='Author')
     executor = models.ForeignKey(User, on_delete=models.CASCADE,
-                                 null=True, related_name='task_executors')
+                                 null=True, related_name='task_executors',
+                                 verbose_name='Executor')
     title = models.CharField('Title', max_length=30)
     text = models.TextField('Text', default='')
     status = models.CharField(
