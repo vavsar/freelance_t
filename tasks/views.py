@@ -40,8 +40,8 @@ class RespondViewSet(viewsets.ModelViewSet):
     def winner(self, request, *args, **kwargs):
         task = get_object_or_404(Task, pk=self.kwargs.get('task_id'))
         respond = get_object_or_404(Respond, pk=self.kwargs.get('respond_id'))
-        task_data = TasksSerializer(task)
-        serializer = TasksSerializer(task, data=task_data.data, partial=True)
+        task_data = TasksSerializer(task).data
+        serializer = TasksSerializer(task, data=task_data, partial=True)
         serializer.is_valid()
         serializer.save(executor=respond.author)
         return Response(serializer.data, status=status.HTTP_200_OK)

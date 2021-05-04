@@ -5,11 +5,8 @@ from tasks.models import Task
 User = get_user_model()
 
 AUTHOR = 'author'
-EXECUTOR = 'executor'
 AUTHOR_EMAIL = 'author@gmail.com'
-EXECUTOR_EMAIL = 'executor@gmail.com'
 AUTHOR_ROLE = 'author'
-EXECUTOR_ROLE = 'executor'
 TITLE = 'test_title'
 
 
@@ -17,13 +14,13 @@ class TaskModelTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.executor = User.objects.create(username=EXECUTOR,
-                                   email=EXECUTOR_EMAIL,
-                                   role=EXECUTOR_ROLE)
-        cls.author = User.objects.create(username=AUTHOR,
-                                       email=AUTHOR_EMAIL,
-                                       role=AUTHOR_ROLE)
-        cls.task = Task.objects.create(author=cls.author, title=TITLE)
+        cls.author = User.objects.create(
+            username=AUTHOR,
+            email=AUTHOR_EMAIL,
+            role=AUTHOR_ROLE)
+        cls.task = Task.objects.create(
+            author=cls.author,
+            title=TITLE)
 
     def test_task_title_label(self):
         task = self.task
