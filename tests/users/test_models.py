@@ -3,6 +3,8 @@ from django.test import TestCase
 
 User = get_user_model()
 
+FIRST_NAME = 'test_first_name',
+LAST_NAME = 'test_last_name',
 EXECUTOR = 'executor'
 EXECUTOR_EMAIL = 'executor@gmail.com'
 AUTHOR_ROLE = 'author'
@@ -14,8 +16,8 @@ class UserModelTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create(first_name='asdf',
-                                       last_name='fdsa',
+        cls.user = User.objects.create(first_name=FIRST_NAME,
+                                       last_name=LAST_NAME,
                                        username=EXECUTOR,
                                        email=EXECUTOR_EMAIL,
                                        role=EXECUTOR_ROLE)
