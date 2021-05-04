@@ -2,6 +2,7 @@ import json
 
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIClient
 from django.contrib.auth import get_user_model
 
@@ -39,10 +40,11 @@ class TaskModelTest(APITestCase):
             author=cls.author,
             title=TITLE,
             status='active')
-        cls.guest_client = APIClient()
-        cls.guest_client.force_authenticate(user=None, token=None)
         cls.executor_client = APIClient()
         cls.executor_client.force_authenticate(user=cls.executor)
+        # author_token = Token.objects.create(user=cls.author)
+        # cls.auth_client = APIClient()
+        # cls.auth_client.credentials(HTTP_AUTHORIZATION='Bearer ' + author_token.key)
         cls.auth_client = APIClient()
         cls.auth_client.force_authenticate(user=cls.author)
         cls.TASK_DETAIL_URL = reverse('tasks-detail', args=[cls.task1.id])
@@ -123,18 +125,18 @@ class RespondTest(APITestCase):
         cls.respond1 = Respond.objects.create(
             author=cls.executor,
             task=cls.task1)
-        cls.guest_client = APIClient()
-        cls.guest_client.force_authenticate(user=None, token=None)
         cls.executor_client = APIClient()
         cls.executor_client.force_authenticate(user=cls.executor)
         cls.auth_client = APIClient()
         cls.auth_client.force_authenticate(user=cls.author)
         cls.TASK_DETAIL_URL = reverse('tasks-detail', args=[cls.task1.id])
         cls.RESPONDS_LIST_URL = reverse('respond-list', args=[cls.task1.id])
-        cls.RESPOND_DETAIL_URL = reverse(
-            'respond-detail',
-            args=[cls.task1.id,
-                  cls.respond1.id])
+        cls.RESPOND_DETAIL_URL = reverse('respond-detail',
+                                         args=[cls.task1.id,
+                                               cls.respond1.id])
+        cls.RESPOND_WINNER = reverse('respond-winner',
+                                     args=[cls.task1.id,
+                                           cls.respond1.id])
 
     def test_get_responds_list(self):
         data = {'id': 1,
@@ -170,3 +172,14 @@ class RespondTest(APITestCase):
             content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Respond.objects.count(), 1)
+
+    def test_author_choose_winner(self):
+        data = {}
+        response = self.auth_client.patch(
+            self.RESPOND_WINNER,
+            data=json.dumps(data),
+            content_type='application/json')
+        print(response.data)
+        # self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # self.assertEqual(response.json()['title'], 'test_title2')
+        # self.assertEqual(response.json()['text'], '2222')

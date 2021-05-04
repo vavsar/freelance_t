@@ -16,11 +16,12 @@ class UserModelTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create(first_name=FIRST_NAME,
-                                       last_name=LAST_NAME,
-                                       username=EXECUTOR,
-                                       email=EXECUTOR_EMAIL,
-                                       role=EXECUTOR_ROLE)
+        cls.user = User.objects.create(
+            first_name=FIRST_NAME,
+            last_name=LAST_NAME,
+            username=EXECUTOR,
+            email=EXECUTOR_EMAIL,
+            role=EXECUTOR_ROLE)
 
     def test_user_label(self):
         user = self.user
