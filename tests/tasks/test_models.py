@@ -41,3 +41,7 @@ class TaskModelTest(TestCase):
     def test_task_default_status(self):
         status = self.task.status
         self.assertEqual(status, 'active')
+
+    def test_task_str(self):
+        task = self.task
+        self.assertEquals(str(task), task.title)

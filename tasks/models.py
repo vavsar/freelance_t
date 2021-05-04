@@ -25,6 +25,9 @@ class Task(models.Model):
         default=TaskStatuses.ACTIVE,
     )
 
+    def __str__(self):
+        return self.title
+
 
 class Respond(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE,
