@@ -59,7 +59,7 @@ class TaskModelTest(APITestCase):
         response = self.auth_client.get(TASKS_LIST_URL)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
-        self.assertTrue(data in response.json().get('results'))
+        self.assertIn(data, response.json().get('results'))
 
     def test_get_task_detail(self):
         response = self.auth_client.get(self.TASK_DETAIL_URL)
