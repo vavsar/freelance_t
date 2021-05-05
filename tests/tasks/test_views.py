@@ -2,9 +2,9 @@ import json
 
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIClient
 from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from tasks.models import Task, Respond
 from tasks.serializers import TasksSerializer, RespondsSerializer
@@ -43,11 +43,10 @@ class TaskModelTest(APITestCase):
             status='active')
         cls.executor_client = APIClient()
         cls.executor_client.force_authenticate(user=cls.executor)
-        # author_token = Token.objects.create(user=cls.author)
-        # cls.auth_client = APIClient()
-        # cls.auth_client.credentials(HTTP_AUTHORIZATION='Bearer ' + author_token.key)
+        cls.token = RefreshToken.for_user(cls.author)
+        cls.author_token = cls.token.access_token
         cls.auth_client = APIClient()
-        cls.auth_client.force_authenticate(user=cls.author)
+        cls.auth_client.credentials(HTTP_AUTHORIZATION=f'Bearer {cls.author_token}')
         cls.TASK_DETAIL_URL = reverse('tasks-detail', args=[cls.task1.id])
 
     def test_get_tasks_list(self):
