@@ -105,6 +105,20 @@ class TaskModelTest(APITestCase):
             content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_author_can_delete_task(self):
+        tasks_before = Task.objects.count()
+        response = self.auth_client.delete(self.TASK_DETAIL_URL)
+        tasks_after = Task.objects.count()
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(tasks_before, tasks_after+1)
+
+    def test_executor_cant_delete_task(self):
+        tasks_before = Task.objects.count()
+        response = self.executor_client.delete(self.TASK_DETAIL_URL)
+        tasks_after = Task.objects.count()
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(tasks_before, tasks_after)
+
 
 class RespondTest(APITestCase):
     @classmethod
@@ -173,13 +187,27 @@ class RespondTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Respond.objects.count(), 1)
 
-    def test_author_choose_winner(self):
-        data = {}
-        response = self.auth_client.patch(
-            self.RESPOND_WINNER,
-            data=json.dumps(data),
-            content_type='application/json')
-        print(response.data)
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # self.assertEqual(response.json()['title'], 'test_title2')
-        # self.assertEqual(response.json()['text'], '2222')
+    def test_executor_can_delete_respond(self):
+        responds_before = Respond.objects.count()
+        response = self.executor_client.delete(self.RESPOND_DETAIL_URL)
+        responds_after = Respond.objects.count()
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(responds_before, responds_after+1)
+
+    def test_author_cant_delete_respond(self):
+        responds_before = Respond.objects.count()
+        response = self.auth_client.delete(self.RESPOND_DETAIL_URL)
+        responds_after = Respond.objects.count()
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(responds_before, responds_after)
+
+    # def test_author_choose_winner(self):
+    #     data = {}
+    #     response = self.auth_client.patch(
+    #         self.RESPOND_WINNER,
+    #         data=json.dumps(data),
+    #         content_type='application/json')
+    #     print(response.data)
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertEqual(response.json()['title'], 'test_title2')
+    #     self.assertEqual(response.json()['text'], '2222')

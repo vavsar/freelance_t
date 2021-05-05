@@ -42,6 +42,6 @@ class RespondViewSet(viewsets.ModelViewSet):
         respond = get_object_or_404(Respond, pk=self.kwargs.get('respond_id'))
         task_data = TasksSerializer(task).data
         serializer = TasksSerializer(task, data=task_data, partial=True)
-        serializer.is_valid()
+        serializer.is_valid(raise_exception=True)
         serializer.save(executor=respond.author)
         return Response(serializer.data, status=status.HTTP_200_OK)
