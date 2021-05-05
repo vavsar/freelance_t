@@ -18,6 +18,7 @@ EXECUTOR_EMAIL = 'executor@gmail.com'
 AUTHOR_ROLE = 'author'
 EXECUTOR_ROLE = 'executor'
 TITLE = 'test_title'
+TEXT = 'test_text'
 TASKS_LIST_URL = reverse('tasks-list')
 TASK_NEW_DATA = {'title': 'test_title2',
                  'text': '2222'}
@@ -135,6 +136,7 @@ class RespondTest(APITestCase):
         cls.task1 = Task.objects.create(
             author=cls.author,
             title=TITLE,
+            text=TEXT,
             status='active')
         cls.respond1 = Respond.objects.create(
             author=cls.executor,
@@ -201,13 +203,12 @@ class RespondTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(responds_before, responds_after)
 
-    # def test_author_choose_winner(self):
-    #     data = {}
-    #     response = self.auth_client.patch(
-    #         self.RESPOND_WINNER,
-    #         data=json.dumps(data),
-    #         content_type='application/json')
-    #     print(response.data)
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-    #     self.assertEqual(response.json()['title'], 'test_title2')
-    #     self.assertEqual(response.json()['text'], '2222')
+    def test_author_choose_winner(self):
+        data = {}
+        response = self.auth_client.patch(
+            self.RESPOND_WINNER,
+            data=data,
+            content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()['title'], 'test_title')
+        self.assertEqual(response.json()['text'], 'test_text')

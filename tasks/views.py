@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -37,11 +39,12 @@ class RespondViewSet(viewsets.ModelViewSet):
             methods=['patch'],
             permission_classes=(IsAuthor,),
             url_path=r'(?P<respond_id>\d+)/winner')
-    def winner(self, request, *args, **kwargs):
+    def winner(self, request, **kwargs):
         task = get_object_or_404(Task, pk=self.kwargs.get('task_id'))
         respond = get_object_or_404(Respond, pk=self.kwargs.get('respond_id'))
         task_data = TasksSerializer(task).data
+        task_data['executor'] = respond.author
         serializer = TasksSerializer(task, data=task_data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save(executor=respond.author)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)

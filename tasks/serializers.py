@@ -14,7 +14,8 @@ class TasksSerializer(serializers.ModelSerializer):
     executor = serializers.SlugRelatedField(
         default=serializers.CreateOnlyDefault(None),
         slug_field='username',
-        queryset=User.objects.all()
+        queryset=User.objects.all(),
+        required=False
     )
 
     class Meta:
