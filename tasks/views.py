@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
+from .exceptions import BalanceTransferError
 from .models import Task, Respond, Transaction
 from .permissions import IsAuthor, IsExecutor
 from .serializers import TasksSerializer, RespondsSerializer
@@ -55,7 +56,7 @@ class TasksViewSet(viewsets.ModelViewSet):
                 user.save()
                 with transaction.atomic():
                     transact.create_transaction_success()
-            except:
+            except BalanceTransferError:
                 transact.create_transaction_fail()
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -63,6 +64,39 @@ class TasksViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user,
                         executor=None)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        transact = TransactionCreation(instance, instance.author, instance.price)
+        if (not instance.status == 'done' and
+                not serializer.validated_data.get('status') == 'done'):
+            self.perform_update(serializer)
+            return Response(serializer.data)
+        elif (not instance.status == 'done' and
+              instance.executor is None and
+              serializer.validated_data.get('status') == 'done'):
+            return Response('Choose executor before making status DONE',
+                            status=status.HTTP_400_BAD_REQUEST)
+        elif (not instance.status == 'done' and
+              instance.executor is not None):
+            try:
+                with transaction.atomic():
+                    instance.author.freeze_balance -= instance.price
+                    instance.executor.balance += instance.price
+                    instance.author.save()
+                    instance.executor.save()
+                    transact.create_transaction_success(instance.executor)
+            except BalanceTransferError:
+                transact.create_transaction_fail(instance.executor)
+            self.perform_update(serializer)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def perform_update(self, serializer):
+        serializer.save()
 
 
 class RespondViewSet(viewsets.ModelViewSet):
@@ -91,17 +125,6 @@ class RespondViewSet(viewsets.ModelViewSet):
             return Response(f'Winner is already chosen: {task.executor}')
         task_data['executor'] = respond.author.id
         task_data['status'] = 'in_progress'
-        try:
-            task_author = get_object_or_404(User, id=task.author.id)
-            task_author.freeze_balance -= task.price
-            task_author.save()
-            task_executor = get_object_or_404(User, id=respond.author.id)
-            task_executor.balance += task.price
-            task_executor.save()
-            with transaction.atomic():
-                transact.create_transaction_success(respond.author)
-        except:
-            transact.create_transaction_fail(respond.author)
         serializer = TasksSerializer(task, data=task_data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()

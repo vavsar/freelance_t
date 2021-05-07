@@ -19,9 +19,12 @@ AUTHOR_ROLE = 'author'
 EXECUTOR_ROLE = 'executor'
 TITLE = 'test_title'
 TEXT = 'test_text'
+TASK_PRICE = 500
+START_BALANCE = 500
 TASKS_LIST_URL = reverse('tasks-list')
 TASK_NEW_DATA = {'title': 'test_title2',
-                 'text': '2222'}
+                 'text': '2222',
+                 'price': TASK_PRICE}
 RESPOND_NEW_DATA = {'author': 2, 'task': 1}
 
 
@@ -32,14 +35,19 @@ class TaskModelTest(APITestCase):
         cls.author = User.objects.create_user(
             username=AUTHOR,
             email=AUTHOR_EMAIL,
+            balance=START_BALANCE,
+            freeze_balance=START_BALANCE,
             role=AUTHOR_ROLE)
         cls.executor = User.objects.create_user(
             username=EXECUTOR,
             email=EXECUTOR_EMAIL,
+            balance=START_BALANCE,
+            freeze_balance=START_BALANCE,
             role=EXECUTOR_ROLE)
         cls.task1 = Task.objects.create(
             author=cls.author,
             title=TITLE,
+            price=TASK_PRICE,
             status='active')
         cls.executor_client = APIClient()
         cls.executor_client.force_authenticate(user=cls.executor)
@@ -104,7 +112,7 @@ class TaskModelTest(APITestCase):
         response = self.auth_client.delete(self.TASK_DETAIL_URL)
         tasks_after = Task.objects.count()
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(tasks_before, tasks_after+1)
+        self.assertEqual(tasks_before, tasks_after + 1)
 
     def test_executor_cant_delete_task(self):
         tasks_before = Task.objects.count()
@@ -112,6 +120,83 @@ class TaskModelTest(APITestCase):
         tasks_after = Task.objects.count()
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(tasks_before, tasks_after)
+
+    def test_create_task_freeze_balance(self):
+        balance_before = self.task1.author.balance
+        freeze_balance_before = self.task1.author.freeze_balance
+        response = self.auth_client.post(
+            TASKS_LIST_URL,
+            data=json.dumps(TASK_NEW_DATA),
+            content_type='application/json')
+        task = Task.objects.exclude(id=self.task1.id)[0]
+        self.assertEqual(self.task1.author, task.author)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(balance_before, task.author.balance + TASK_PRICE)
+        self.assertEqual(freeze_balance_before, task.author.freeze_balance - TASK_PRICE)
+
+    def test_cant_make_status_DONE_if_executor_not_chosen(self):
+        response = self.auth_client.patch(
+            self.TASK_DETAIL_URL,
+            data=json.dumps({'status': 'done'}),
+            content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.task1.status, 'active')
+
+    def test_can_make_status_DONE_if_executor_chosen(self):
+        task2 = Task.objects.create(
+            author=self.author,
+            executor=self.executor,
+            title=TITLE,
+            price=TASK_PRICE,
+            status='active'
+        )
+        response = self.auth_client.patch(
+            reverse('tasks-detail', args=[task2.id]),
+            data=json.dumps({'status': 'done'}),
+            content_type='application/json')
+        task2.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(task2.status, 'done')
+
+    def test_DONE_status_moves_money_from_freeze_bal_to_executor_balance(self):
+        task2 = Task.objects.create(
+            author=self.author,
+            executor=self.executor,
+            title=TITLE,
+            price=TASK_PRICE,
+            status='active'
+        )
+        author_balance_before = task2.author.freeze_balance
+        self.auth_client.patch(
+            reverse('tasks-detail', args=[task2.id]),
+            data=json.dumps({'status': 'done'}),
+            content_type='application/json')
+        task2.refresh_from_db()
+        author_balance_after = task2.author.freeze_balance
+        self.assertEqual(author_balance_before, author_balance_after+TASK_PRICE)
+        self.assertEqual(task2.executor.balance, START_BALANCE+TASK_PRICE)
+
+    def test_cant_pay_more_than_once_per_task(self):
+        task2 = Task.objects.create(
+            author=self.author,
+            executor=self.executor,
+            title=TITLE,
+            price=TASK_PRICE,
+            status='done'
+        )
+        author_balance_before = task2.author.freeze_balance
+        self.auth_client.patch(
+            reverse('tasks-detail', args=[task2.id]),
+            data=json.dumps({'status': 'active'}),
+            content_type='application/json')
+        self.auth_client.patch(
+            reverse('tasks-detail', args=[task2.id]),
+            data=json.dumps({'status': 'done'}),
+            content_type='application/json')
+        task2.refresh_from_db()
+        author_balance_after = task2.author.freeze_balance
+        self.assertEqual(author_balance_before, author_balance_after)
+        self.assertEqual(task2.executor.balance, START_BALANCE)
 
 
 class RespondTest(APITestCase):
@@ -187,7 +272,7 @@ class RespondTest(APITestCase):
         response = self.executor_client.delete(self.RESPOND_DETAIL_URL)
         responds_after = Respond.objects.count()
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(responds_before, responds_after+1)
+        self.assertEqual(responds_before, responds_after + 1)
 
     def test_author_cant_delete_respond(self):
         responds_before = Respond.objects.count()

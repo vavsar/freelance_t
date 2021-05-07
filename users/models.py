@@ -2,6 +2,7 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import (PermissionsMixin, UserManager,
                                         _user_has_module_perms, _user_has_perm)
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -22,8 +23,10 @@ class User(AbstractBaseUser):
         choices=UserRole.choices,
         default=UserRole.EXECUTOR,
     )
-    balance = models.DecimalField(default=0, max_digits=10, decimal_places=0)
-    freeze_balance = models.DecimalField(default=0, max_digits=10, decimal_places=0)
+    balance = models.DecimalField(default=0, max_digits=10, decimal_places=0,
+                                  validators=[MinValueValidator(0)])
+    freeze_balance = models.DecimalField(default=0, max_digits=10, decimal_places=0,
+                                         validators=[MinValueValidator(0)])
     is_staff = models.BooleanField(
         _('staff status'),
         default=False,
