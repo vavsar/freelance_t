@@ -11,17 +11,6 @@ class TasksSerializer(serializers.ModelSerializer):
         slug_field='username',
         read_only=True
     )
-    # executor = serializers.SlugRelatedField(
-    #     default=serializers.CreateOnlyDefault(None),
-    #     slug_field='username',
-    #     queryset=User.objects.all(),
-    #     required=False
-    # )
-    # price = serializers.DecimalField(
-    #     max_digits=10,
-    #     decimal_places=0,
-    #     required=True
-    # )
 
     class Meta:
         model = Task

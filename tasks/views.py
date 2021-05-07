@@ -63,8 +63,21 @@ class RespondViewSet(viewsets.ModelViewSet):
         task = get_object_or_404(Task, pk=self.kwargs.get('task_id'))
         respond = get_object_or_404(Respond, pk=self.kwargs.get('respond_id'))
         task_data = TasksSerializer(task).data
-        task_data['executor'] = respond.author
-        # task_data['status'] = 'in_progress'
+        task_data['executor'] = respond.author.id
+        task_data['status'] = 'in_progress'
+        with transaction.atomic():
+            Transaction.objects.create(
+                task=task,
+                author=task.author,
+                price=task.price,
+                executor=task.executor,
+                status='Success')
+            task_author = get_object_or_404(User, id=task.author.id)
+            task_author.freeze_balance -= task.price
+            task_author.save()
+            task_executor = get_object_or_404(User, id=respond.author.id)
+            task_executor.balance += task.price
+            task_executor.save()
         serializer = TasksSerializer(task, data=task_data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()

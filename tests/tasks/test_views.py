@@ -203,7 +203,7 @@ class RespondTest(APITestCase):
             data=data,
             content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()['executor'], self.respond1.author.username)
+        self.assertEqual(response.json()['executor'], self.respond1.author.id)
 
     def test_executor_cant_choose_winner(self):
         data = {}
@@ -212,3 +212,7 @@ class RespondTest(APITestCase):
             data=data,
             content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class TransactionsTest(APITestCase):
+    pass
