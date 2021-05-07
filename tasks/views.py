@@ -6,35 +6,12 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
 from .exceptions import BalanceTransferError
-from .models import Task, Respond, Transaction
+from .helpers import TransactionCreation
+from .models import Task, Respond
 from .permissions import IsAuthor, IsExecutor
 from .serializers import TasksSerializer, RespondsSerializer
 
 User = get_user_model()
-
-
-class TransactionCreation:
-    def __init__(self, task, author, price, executor=None):
-        self.task = task
-        self.author = author
-        self.price = price
-        self.executor = executor
-
-    def create_transaction_success(self, executor=None):
-        Transaction.objects.create(
-            task=self.task,
-            author=self.task.author,
-            price=self.task.price,
-            executor=executor,
-            status='Success')
-
-    def create_transaction_fail(self, executor=None):
-        Transaction.objects.create(
-            task=self.task,
-            author=self.task.author,
-            price=self.task.price,
-            executor=executor,
-            status='Fail')
 
 
 class TasksViewSet(viewsets.ModelViewSet):
