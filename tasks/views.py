@@ -1,10 +1,11 @@
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
-from .models import Task, Respond
+from .models import Task, Respond, Transaction
 from .permissions import IsAuthor, IsExecutor
 from .serializers import TasksSerializer, RespondsSerializer
 
@@ -16,6 +17,21 @@ class TasksViewSet(viewsets.ModelViewSet):
     serializer_class = TasksSerializer
     permission_classes = (IsAuthor,)
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        task = get_object_or_404(Task, id=serializer.data['id'])
+        with transaction.atomic():
+            Transaction.objects.create(task=task,
+                                       author=task.author,
+                                       price=task.price,
+                                       status='success'
+                                       )
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @transaction.atomic
     def perform_create(self, serializer):
         serializer.save(author=self.request.user,
                         executor=None)
@@ -42,6 +58,7 @@ class RespondViewSet(viewsets.ModelViewSet):
         respond = get_object_or_404(Respond, pk=self.kwargs.get('respond_id'))
         task_data = TasksSerializer(task).data
         task_data['executor'] = respond.author
+        # task_data['status'] = 'in_progress'
         serializer = TasksSerializer(task, data=task_data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()

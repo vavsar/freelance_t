@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Task, Respond
+from .models import Task, Respond, Transaction
 
 
 class TaskAdmin(admin.ModelAdmin):
@@ -10,8 +10,10 @@ class TaskAdmin(admin.ModelAdmin):
         'executor',
         'title',
         'text',
-        'status'
+        'status',
+        'price'
     )
+    list_editable = ('status',)
 
 
 class RespondAdmin(admin.ModelAdmin):
@@ -22,5 +24,18 @@ class RespondAdmin(admin.ModelAdmin):
     )
 
 
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'created',
+        'task',
+        'author',
+        'executor',
+        'price',
+        'status',
+    )
+
+
 admin.site.register(Task, TaskAdmin)
 admin.site.register(Respond, RespondAdmin)
+admin.site.register(Transaction, TransactionAdmin)

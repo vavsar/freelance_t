@@ -50,16 +50,10 @@ class TaskModelTest(APITestCase):
         cls.TASK_DETAIL_URL = reverse('tasks-detail', args=[cls.task1.id])
 
     def test_get_tasks_list(self):
-        data = {'id': 1,
-                'author': 'author',
-                'executor': None,
-                'title': 'test_title',
-                'text': '',
-                'status': 'active'}
         response = self.auth_client.get(TASKS_LIST_URL)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
-        self.assertIn(data, response.json().get('results'))
+        self.assertEqual(self.task1.title, response.json()['results'][0]['title'])
 
     def test_get_task_detail(self):
         response = self.auth_client.get(self.TASK_DETAIL_URL)

@@ -25,6 +25,7 @@ class Task(models.Model):
         choices=TaskStatuses.choices,
         default=TaskStatuses.ACTIVE,
     )
+    price = models.DecimalField(default=500, max_digits=10, decimal_places=0)
 
     def __str__(self):
         return self.title
@@ -35,3 +36,22 @@ class Respond(models.Model):
                                related_name='responds')
     task = models.ForeignKey(Task, on_delete=models.CASCADE,
                              related_name='responds')
+
+
+class Transaction(models.Model):
+    SUCCESS = 'Success'
+    FAIL = 'Fail'
+    STATUS_CHOICES = (
+        (SUCCESS, 'Success'),
+        (FAIL, 'Fail')
+    )
+    created = models.DateTimeField(auto_now=True)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE,
+                             related_name='transactions')
+    author = models.ForeignKey(User, on_delete=models.CASCADE,
+                               related_name='transactions_author')
+    executor = models.ForeignKey(User, on_delete=models.CASCADE,
+                                 null=True,
+                                 related_name='transactions_executor')
+    price = models.DecimalField(default=0, max_digits=10, decimal_places=0)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)

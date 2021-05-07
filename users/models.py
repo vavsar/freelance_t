@@ -22,6 +22,8 @@ class User(AbstractBaseUser):
         choices=UserRole.choices,
         default=UserRole.EXECUTOR,
     )
+    balance = models.DecimalField(default=0, max_digits=10, decimal_places=0)
+    freeze_balance = models.DecimalField(default=0, max_digits=10, decimal_places=0)
     is_staff = models.BooleanField(
         _('staff status'),
         default=False,
