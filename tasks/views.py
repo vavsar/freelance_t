@@ -63,6 +63,8 @@ class RespondViewSet(viewsets.ModelViewSet):
         task = get_object_or_404(Task, pk=self.kwargs.get('task_id'))
         respond = get_object_or_404(Respond, pk=self.kwargs.get('respond_id'))
         task_data = TasksSerializer(task).data
+        if task_data['executor'] is not None:
+            return Response(f'Winner is already chosen: {task.executor}')
         task_data['executor'] = respond.author.id
         task_data['status'] = 'in_progress'
         with transaction.atomic():
