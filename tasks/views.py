@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import viewsets, status
@@ -22,16 +24,20 @@ class TasksViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         task = get_object_or_404(Task, id=serializer.data['id'])
-        with transaction.atomic():
-            Transaction.objects.create(task=task,
-                                       author=task.author,
-                                       price=task.price,
-                                       status='success'
-                                       )
+        if task:
+            with transaction.atomic():
+                Transaction.objects.create(
+                    task=task,
+                    author=task.author,
+                    price=task.price,
+                    status='Success')
+                user = get_object_or_404(User, id=task.author.id)
+                user.balance -= task.price
+                user.freeze_balance += task.price
+                user.save()
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    @transaction.atomic
     def perform_create(self, serializer):
         serializer.save(author=self.request.user,
                         executor=None)

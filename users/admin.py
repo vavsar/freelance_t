@@ -11,6 +11,8 @@ class UserAdmin(admin.ModelAdmin):
         'last_name',
         'username',
         'email',
+        'balance',
+        'freeze_balance',
         'role',
     )
 
