@@ -22,19 +22,24 @@ class TasksViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if serializer.validated_data['price'] > request.user.balance:
+            return Response('Not enough money on your balance',
+                            status=status.HTTP_400_BAD_REQUEST)
         self.perform_create(serializer)
         task = get_object_or_404(Task, id=serializer.data['id'])
-        if task:
-            transact = TransactionCreation(task, task.author, task.price)
-            try:
-                user = get_object_or_404(User, id=task.author.id)
+        if not task:
+            return Response('Something went wrong by creating Task',
+                            status=status.HTTP_400_BAD_REQUEST)
+        make_transaction = TransactionCreation(task, task.author, task.price)
+        try:
+            user = get_object_or_404(User, id=task.author.id)
+            with transaction.atomic():
                 user.balance -= task.price
                 user.freeze_balance += task.price
                 user.save()
-                with transaction.atomic():
-                    transact.create_transaction_success()
-            except BalanceTransferError:
-                transact.create_transaction_fail()
+                make_transaction.create_transaction_success()
+        except BalanceTransferError:
+            make_transaction.create_transaction_fail()
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -47,7 +52,7 @@ class TasksViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        transact = TransactionCreation(instance, instance.author, instance.price)
+        make_transaction = TransactionCreation(instance, instance.author, instance.price)
         if (not instance.status == 'done' and
                 not serializer.validated_data.get('status') == 'done'):
             self.perform_update(serializer)
@@ -65,9 +70,9 @@ class TasksViewSet(viewsets.ModelViewSet):
                     instance.executor.balance += instance.price
                     instance.author.save()
                     instance.executor.save()
-                    transact.create_transaction_success(instance.executor)
+                    make_transaction.create_transaction_success(instance.executor)
             except BalanceTransferError:
-                transact.create_transaction_fail(instance.executor)
+                make_transaction.create_transaction_fail(instance.executor)
             self.perform_update(serializer)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
