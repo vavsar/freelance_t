@@ -6,7 +6,7 @@ from rest_framework.test import APITestCase, APIClient
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from tasks.models import Task, Respond
+from tasks.models import Task, Respond, Transaction
 from tasks.serializers import TasksSerializer, RespondsSerializer
 
 User = get_user_model()
@@ -140,7 +140,7 @@ class TaskModelTest(APITestCase):
             TASKS_LIST_URL,
             data=json.dumps({'title': 'test_title2',
                              'text': '2222',
-                             'price': START_BALANCE+200}),
+                             'price': START_BALANCE + 200}),
             content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(tasks_count, Task.objects.count())
@@ -309,4 +309,83 @@ class RespondTest(APITestCase):
 
 
 class TransactionsTest(APITestCase):
-    pass
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.author = User.objects.create_user(
+            username=AUTHOR,
+            email=AUTHOR_EMAIL,
+            balance=START_BALANCE,
+            freeze_balance=START_BALANCE,
+            role=AUTHOR_ROLE)
+        cls.executor = User.objects.create_user(
+            username=EXECUTOR,
+            email=EXECUTOR_EMAIL,
+            balance=START_BALANCE,
+            freeze_balance=START_BALANCE,
+            role=EXECUTOR_ROLE)
+        cls.task1 = Task.objects.create(
+            author=cls.author,
+            title=TITLE,
+            price=TASK_PRICE,
+            status='active')
+        cls.executor_client = APIClient()
+        cls.executor_client.force_authenticate(user=cls.executor)
+        cls.token = RefreshToken.for_user(cls.author)
+        cls.author_token = cls.token.access_token
+        cls.auth_client = APIClient()
+        cls.auth_client.credentials(HTTP_AUTHORIZATION=f'Bearer {cls.author_token}')
+        cls.TASK_DETAIL_URL = reverse('tasks-detail', args=[cls.task1.id])
+
+    def test_add_transaction_by_creating_task(self):
+        response = self.auth_client.post(
+            TASKS_LIST_URL,
+            data=json.dumps(TASK_NEW_DATA),
+            content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Task.objects.count(), 2)
+        self.assertEqual(Transaction.objects.count(), 1)
+        task = Task.objects.exclude(id=self.task1.id)[0]
+        transaction = Transaction.objects.get(task=task)
+        self.assertEqual(transaction.author, task.author)
+        self.assertEqual(transaction.executor, task.executor)
+        self.assertEqual(transaction.status, 'Success')
+
+    def test_add_transaction_by_updating_tasks_status_to_done(self):
+        task2 = Task.objects.create(
+            author=self.author,
+            executor=self.executor,
+            title=TITLE,
+            price=TASK_PRICE,
+            status='active'
+        )
+        response = self.auth_client.patch(
+            reverse('tasks-detail', args=[task2.id]),
+            data=json.dumps({'status': 'done'}),
+            content_type='application/json')
+        task2.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(task2.status, 'done')
+        transaction = Transaction.objects.get(task=task2)
+        self.assertEqual(transaction.author, task2.author)
+        self.assertEqual(transaction.executor, task2.executor)
+        self.assertEqual(transaction.status, 'Success')
+
+    def test_add_transaction_if_executor_not_chosen(self):
+        task2 = Task.objects.create(
+            author=self.author,
+            title=TITLE,
+            price=TASK_PRICE,
+            status='active'
+        )
+        response = self.auth_client.patch(
+            reverse('tasks-detail', args=[task2.id]),
+            data=json.dumps({'status': 'done'}),
+            content_type='application/json')
+        task2.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(task2.executor, None)
+        transaction = Transaction.objects.get(task=task2)
+        self.assertEqual(transaction.author, task2.author)
+        self.assertEqual(transaction.executor, task2.executor)
+        self.assertEqual(transaction.status, 'Fail')

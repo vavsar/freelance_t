@@ -60,6 +60,7 @@ class TasksViewSet(viewsets.ModelViewSet):
         elif (instance.status != 'done' and
               instance.executor is None and
               serializer.validated_data.get('status') == 'done'):
+            make_transaction.create_transaction_fail()
             return Response('Choose executor before making status DONE',
                             status=status.HTTP_400_BAD_REQUEST)
         elif instance.status == 'done':
