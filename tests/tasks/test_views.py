@@ -209,26 +209,6 @@ class TaskModelTest(APITestCase):
         self.assertEqual(author_balance_before, author_balance_after)
         self.assertEqual(task2.executor.balance, START_BALANCE)
 
-    # def test_cant_pay_if_no_money_on_balance(self):
-    #     task2 = Task.objects.create(
-    #         author=self.author,
-    #         executor=self.executor,
-    #         title=TITLE,
-    #         price=1000,
-    #         status='active'
-    #     )
-    #     author_balance_before = task2.author.freeze_balance
-    #     self.auth_client.patch(
-    #         reverse('tasks-detail', args=[task2.id]),
-    #         data=json.dumps({'status': 'done'}),
-    #         content_type='application/json')
-    #     task2.refresh_from_db()
-    #     author_balance_after = task2.author.freeze_balance
-    #     print(author_balance_before)
-    #     print(author_balance_after)
-    #     self.assertEqual(author_balance_before, author_balance_after+task2.price)
-    # self.assertEqual(task2.executor.balance, START_BALANCE+task2.price)
-
 
 class RespondTest(APITestCase):
     @classmethod

@@ -4,6 +4,7 @@ from django.core.mail import send_mail
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -17,6 +18,21 @@ class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'id'
+    permission_classes = (IsAdminUser,)
+
+    @action(detail=False,
+            methods=['get', 'patch'],
+            permission_classes=(IsAuthenticated,))
+    def me(self, request):
+        user = get_object_or_404(User, id=request.user.id)
+        if request.method == 'GET':
+            serializer = self.get_serializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(role=user.role, balance=user.balance,
+                        freeze_balance=user.freeze_balance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class EmailConfirm(viewsets.ViewSet):

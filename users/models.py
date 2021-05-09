@@ -68,6 +68,7 @@ class User(AbstractBaseUser):
     class Meta:
         verbose_name = _('user')
         verbose_name_plural = _('users')
+        ordering = ['-id']
 
     def clean(self):
         super().clean()

@@ -53,28 +53,27 @@ class TasksViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         make_transaction = TransactionCreation(instance, instance.author, instance.price)
-        if (not instance.status == 'done' and
-                not serializer.validated_data.get('status') == 'done'):
+        if (instance.status != 'done' and
+                serializer.validated_data.get('status') != 'done'):
             self.perform_update(serializer)
-            return Response(serializer.data)
-        elif (not instance.status == 'done' and
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        elif (instance.status != 'done' and
               instance.executor is None and
               serializer.validated_data.get('status') == 'done'):
             return Response('Choose executor before making status DONE',
                             status=status.HTTP_400_BAD_REQUEST)
-        elif (not instance.status == 'done' and
-              instance.executor is not None):
-            try:
-                with transaction.atomic():
-                    instance.author.freeze_balance -= instance.price
-                    instance.executor.balance += instance.price
-                    instance.author.save()
-                    instance.executor.save()
-                    make_transaction.create_transaction_success(instance.executor)
-            except BalanceTransferError:
-                make_transaction.create_transaction_fail(instance.executor)
-            self.perform_update(serializer)
+        elif instance.status == 'done':
             return Response(serializer.data, status=status.HTTP_200_OK)
+        try:
+            with transaction.atomic():
+                instance.author.freeze_balance -= instance.price
+                instance.executor.balance += instance.price
+                instance.author.save()
+                instance.executor.save()
+                make_transaction.create_transaction_success(instance.executor)
+        except BalanceTransferError:
+            make_transaction.create_transaction_fail(instance.executor)
+        self.perform_update(serializer)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def perform_update(self, serializer):
