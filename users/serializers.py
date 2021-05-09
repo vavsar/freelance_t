@@ -11,6 +11,12 @@ class UserSerializer(serializers.ModelSerializer):
                   'email', 'role', 'balance', 'freeze_balance')
 
 
+class BalanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('balance', )
+
+
 class EmailSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=20)
     email = serializers.EmailField(required=True)

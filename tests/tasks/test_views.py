@@ -293,19 +293,17 @@ class RespondTest(APITestCase):
         self.assertEqual(responds_before, responds_after)
 
     def test_author_choose_winner(self):
-        data = {}
         response = self.auth_client.patch(
             self.RESPOND_WINNER,
-            data=data,
+            data={},
             content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()['executor'], self.respond1.author.id)
 
     def test_executor_cant_choose_winner(self):
-        data = {}
         response = self.executor_client.patch(
             self.RESPOND_WINNER,
-            data=data,
+            data={},
             content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 

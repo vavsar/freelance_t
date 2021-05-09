@@ -76,9 +76,6 @@ class TasksViewSet(viewsets.ModelViewSet):
         self.perform_update(serializer)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def perform_update(self, serializer):
-        serializer.save()
-
 
 class RespondViewSet(viewsets.ModelViewSet):
     serializer_class = RespondsSerializer

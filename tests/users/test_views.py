@@ -6,20 +6,19 @@ from rest_framework.test import APITestCase, APIClient
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from tasks.models import Task, Respond
-from tasks.serializers import TasksSerializer, RespondsSerializer
-
 User = get_user_model()
 
 AUTHOR = 'author'
 EXECUTOR = 'executor'
 AUTHOR_EMAIL = 'author@gmail.com'
+NEW_AUTHOR_EMAIL = '123@gmail.com'
 EXECUTOR_EMAIL = 'executor@gmail.com'
 AUTHOR_ROLE = 'author'
 EXECUTOR_ROLE = 'executor'
 START_BALANCE = 500
 NEW_BALANCE = 1
 USERS_LIST_URL = reverse('users-list')
+
 RESPOND_NEW_DATA = {'author': 2, 'task': 1}
 
 
@@ -45,6 +44,8 @@ class TaskModelTest(APITestCase):
             freeze_balance=START_BALANCE,
             role=EXECUTOR_ROLE)
         self.ADMIN_DETAIL_URL = reverse('users-detail', args=[self.admin.id])
+        self.AUTHOR_ADD_BALANCE_URL = reverse('users-balance')
+        self.USER_CHANGE_DATA_URL = reverse('users-me')
         self.AUTHOR_DETAIL_URL = reverse('users-detail', args=[self.author.id])
         self.EXECUTOR_DETAIL_URL = reverse('users-detail', args=[self.executor.id])
         self.executor_client = APIClient()
@@ -77,13 +78,36 @@ class TaskModelTest(APITestCase):
         self.assertEqual(balance_before, START_BALANCE)
         self.assertEqual(balance_after, NEW_BALANCE)
 
-    def test_not_admin_cant_update_user_data(self):
+    def test_balance_url_add_money_to_balance(self):
         balance_before = self.author.balance
         response = self.auth_client.patch(
-            self.AUTHOR_DETAIL_URL,
+            self.AUTHOR_ADD_BALANCE_URL,
             data=json.dumps({'balance': NEW_BALANCE}),
             content_type='application/json')
         self.author.refresh_from_db()
         balance_after = self.author.balance
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(balance_before, balance_after-NEW_BALANCE)
+
+    def test_not_admin_cant_update_user_data(self):
+        email_before = self.author.email
+        response = self.auth_client.patch(
+            self.AUTHOR_DETAIL_URL,
+            data=json.dumps({'email': NEW_AUTHOR_EMAIL}),
+            content_type='application/json')
+        self.author.refresh_from_db()
+        email_after = self.author.email
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(balance_before, balance_after)
+        self.assertEqual(email_before, email_after)
+
+    def test_user_can_update_own_data(self):
+        email_before = self.author.email
+        response = self.auth_client.patch(
+            self.USER_CHANGE_DATA_URL,
+            data=json.dumps({'email': NEW_AUTHOR_EMAIL}),
+            content_type='application/json')
+        self.author.refresh_from_db()
+        email_after = self.author.email
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(email_before, AUTHOR_EMAIL)
+        self.assertEqual(email_after, NEW_AUTHOR_EMAIL)

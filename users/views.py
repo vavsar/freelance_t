@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
@@ -9,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from freelance1.settings import NOREPLY_FREELANCE1_EMAIL
-from users.serializers import EmailSerializer, CodeSerializer, UserSerializer
+from users.serializers import EmailSerializer, CodeSerializer, UserSerializer, BalanceSerializer
 
 User = get_user_model()
 
@@ -32,6 +34,17 @@ class UsersViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save(role=user.role, balance=user.balance,
                         freeze_balance=user.freeze_balance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False,
+            methods=['patch'],
+            permission_classes=(IsAuthenticated,))
+    def balance(self, request):
+        user = get_object_or_404(User, id=request.user.id)
+        serializer = BalanceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user.balance += Decimal(serializer.data['balance'])
+        user.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
