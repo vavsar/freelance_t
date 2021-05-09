@@ -22,6 +22,7 @@ class TasksViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        transaction_log = TransactionCreation()
         if serializer.validated_data['price'] > request.user.balance:
             return Response('Not enough money on your balance',
                             status=status.HTTP_400_BAD_REQUEST)
@@ -30,16 +31,20 @@ class TasksViewSet(viewsets.ModelViewSet):
         if not task:
             return Response('Something went wrong by creating Task',
                             status=status.HTTP_400_BAD_REQUEST)
-        make_transaction = TransactionCreation(task, task.author, task.price)
+
         try:
             user = get_object_or_404(User, id=task.author.id)
             with transaction.atomic():
                 user.balance -= task.price
                 user.freeze_balance += task.price
                 user.save()
-                make_transaction.create_transaction_success()
+                transaction_log.create_transaction_success(task,
+                                                           task.author,
+                                                           task.price)
         except BalanceTransferError:
-            make_transaction.create_transaction_fail()
+            transaction_log.create_transaction_fail(task,
+                                                    task.author,
+                                                    task.price)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -49,31 +54,36 @@ class TasksViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        task = self.get_object()
+        transaction_log = TransactionCreation()
+        serializer = self.get_serializer(task, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        make_transaction = TransactionCreation(instance, instance.author, instance.price)
-        if (instance.status != 'done' and
+        if (task.status != 'done' and
                 serializer.validated_data.get('status') != 'done'):
             self.perform_update(serializer)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        elif (instance.status != 'done' and
-              instance.executor is None and
+        elif (task.status != 'done' and
+              task.executor is None and
               serializer.validated_data.get('status') == 'done'):
-            make_transaction.create_transaction_fail()
+            transaction_log.create_transaction_fail(task,
+                                                    task.author,
+                                                    task.price)
             return Response('Choose executor before making status DONE',
                             status=status.HTTP_400_BAD_REQUEST)
-        elif instance.status == 'done':
+        elif task.status == 'done':
             return Response(serializer.data, status=status.HTTP_200_OK)
         try:
             with transaction.atomic():
-                instance.author.freeze_balance -= instance.price
-                instance.executor.balance += instance.price
-                instance.author.save()
-                instance.executor.save()
-                make_transaction.create_transaction_success(instance.executor)
+                task.author.freeze_balance -= task.price
+                task.executor.balance += task.price
+                task.author.save()
+                task.executor.save()
+                transaction_log.create_transaction_success(task,
+                                                           task.author,
+                                                           task.price,
+                                                           task.executor)
         except BalanceTransferError:
-            make_transaction.create_transaction_fail(instance.executor)
+            transaction_log.create_transaction_fail(task.executor)
         self.perform_update(serializer)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -98,9 +108,12 @@ class RespondViewSet(viewsets.ModelViewSet):
         task = get_object_or_404(Task, pk=self.kwargs.get('task_id'))
         respond = get_object_or_404(Respond, pk=self.kwargs.get('respond_id'))
         task_data = TasksSerializer(task).data
-        transact = TransactionCreation(task, task.author, task.price)
+        transaction_log = TransactionCreation()
         if task_data['executor'] is not None:
-            transact.create_transaction_fail(task.executor)
+            transaction_log.create_transaction_fail(task,
+                                                    task.author,
+                                                    task.price,
+                                                    task.executor)
             return Response(f'Winner is already chosen: {task.executor}')
         task_data['executor'] = respond.author.id
         task_data['status'] = 'in_progress'

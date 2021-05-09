@@ -75,24 +75,13 @@ class User(AbstractBaseUser):
         self.email = self.__class__.objects.normalize_email(self.email)
 
     def get_full_name(self):
-        """
-        Return the first_name plus the last_name, with a space in between.
-        """
         full_name = '%s %s' % (self.first_name, self.last_name)
         return full_name.strip()
 
     def get_short_name(self):
-        """Return the short name for the user."""
         return self.first_name
 
     def has_perm(self, perm, obj=None):
-        """
-        Return True if the user has the specified permission. Query all
-        available auth backends, but return immediately if any backend returns
-        True. Thus, a user who has permission from a single auth backend is
-        assumed to have permission in general. If an object is provided, check
-        permissions for that object.
-        """
         # Active superusers have all permissions.
         if self.is_active and self.is_superuser:
             return True
@@ -101,10 +90,6 @@ class User(AbstractBaseUser):
         return _user_has_perm(self, perm, obj)
 
     def has_module_perms(self, app_label):
-        """
-        Return True if the user has any permissions in the given app label.
-        Use similar logic as has_perm(), above.
-        """
         # Active superusers have all permissions.
         if self.is_active and self.is_superuser:
             return True
