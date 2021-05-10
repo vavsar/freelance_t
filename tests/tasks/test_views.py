@@ -2,6 +2,7 @@ import json
 
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.generics import get_object_or_404
 from rest_framework.test import APITestCase, APIClient
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -346,7 +347,7 @@ class TransactionsTest(APITestCase):
         self.assertEqual(Task.objects.count(), 2)
         self.assertEqual(Transaction.objects.count(), 1)
         task = Task.objects.exclude(id=self.task1.id)[0]
-        transaction = Transaction.objects.get(task=task)
+        transaction = get_object_or_404(Transaction, task=task)
         self.assertEqual(transaction.author, task.author)
         self.assertEqual(transaction.executor, task.executor)
         self.assertEqual(transaction.status, 'Success')

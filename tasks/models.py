@@ -53,8 +53,10 @@ class Transaction(models.Model):
     )
     created = models.DateTimeField(auto_now=True)
     task = models.ForeignKey(Task, on_delete=models.CASCADE,
+                             null=True,
                              related_name='transactions')
     author = models.ForeignKey(User, on_delete=models.CASCADE,
+                               null=True,
                                related_name='transactions_author')
     executor = models.ForeignKey(User, on_delete=models.CASCADE,
                                  null=True,
