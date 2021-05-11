@@ -17,6 +17,7 @@ class TasksSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context['request']
+
         if validated_data['price'] > request.user.balance:
             raise serializers.ValidationError('Not enough money on your balance')
         task_price = validated_data['price']
