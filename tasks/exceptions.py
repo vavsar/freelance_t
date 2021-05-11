@@ -1,2 +1,0 @@
-class BalanceTransferError(BaseException):
-    pass
