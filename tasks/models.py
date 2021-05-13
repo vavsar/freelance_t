@@ -34,6 +34,20 @@ class Task(models.Model):
         ordering = ['-id']
 
 
+class Comment(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE,
+                             null=True, blank=True,
+                             related_name='comments')
+    text = models.TextField('Text', default='', null=True)
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL,
+                               null=True, blank=True,
+                               related_name='children')
+
+    @property
+    def root_comments(self):
+        return self.comments.filter(parent=None)
+
+
 class Respond(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE,
                                related_name='responds')

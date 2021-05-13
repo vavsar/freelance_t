@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Task, Respond, Transaction
+from .models import Task, Respond, Transaction, Comment
 
 
 class TaskAdmin(admin.ModelAdmin):
@@ -37,5 +37,6 @@ class TransactionAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Task, TaskAdmin)
+admin.site.register(Comment)
 admin.site.register(Respond, RespondAdmin)
 admin.site.register(Transaction, TransactionAdmin)

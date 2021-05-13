@@ -2,11 +2,8 @@ from tasks.models import Transaction
 
 
 class TransactionCreation:
-    def __init__(self, task, author, price, executor=None):
+    def __init__(self, task):
         self.task = task
-        self.author = author
-        self.price = price
-        self.executor = executor
 
     def create_transaction_success(self, executor=None):
         Transaction.objects.create(
